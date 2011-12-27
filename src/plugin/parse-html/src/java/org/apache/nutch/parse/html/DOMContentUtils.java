@@ -134,16 +134,28 @@ public class DOMContentUtils {
     while (walker.hasNext()) {
     
       Node currentNode = walker.nextNode();
-      String nodeName = currentNode.getNodeName();
+      String nodeName = currentNode.getNodeName().toLowerCase();
       short nodeType = currentNode.getNodeType();
       
-      if ("script".equalsIgnoreCase(nodeName)) {
+      if ("script".equals(nodeName) || "style".equals(nodeName)) {
         walker.skipChildren();
+      } else if (nodeType == Node.ELEMENT_NODE && currentNode.hasAttributes()) {
+    	  NamedNodeMap attributes = currentNode.getAttributes();
+
+    	  Node classAttribute = attributes.getNamedItem("class");
+    	  if (classAttribute != null) {
+    		  String[] classes = ((Attr)classAttribute).getValue().split(" ");
+    		  
+    		  for (int i = 0; i < classes.length; i++) {
+    			  if ("robots-nocontent".equals(classes[i])) {
+    				  walker.skipChildren();
+    				  break;
+    			  }
+    		  }
+          }
       }
-      if ("style".equalsIgnoreCase(nodeName)) {
-        walker.skipChildren();
-      }
-      if (abortOnNestedAnchors && "a".equalsIgnoreCase(nodeName)) {
+      
+      if (abortOnNestedAnchors && "a".equals(nodeName)) {
         anchorDepth++;
         if (anchorDepth > 1) {
           abort = true;
